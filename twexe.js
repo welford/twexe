@@ -43,42 +43,48 @@ var Widget = require("$:/core/modules/widgets/widget.js").widget;
 var TWExeWidget = function(parseTreeNode,options) {
 	this.initialise(parseTreeNode, options);
 
-	var self = this;
+	if (TWExeWidget.prototype.context_menu == null) {
+		var context_menu = document.createElement("div");
+		var explorer = document.createElement("button");
+		var new_line = document.createElement("br");
+		var clipboard = document.createElement("button");
 
-	//set up the context menu 
-	var context_menu = this.document.createElement("div");
-	var explorer = this.document.createElement("button");
-	var new_line = this.document.createElement("br");
-	var clipboard = this.document.createElement("button");
-	
-	explorer.appendChild(document.createTextNode("Open in Explorer"));
-	clipboard.appendChild(document.createTextNode("Copy Path to clipboard"));
+		explorer.appendChild(document.createTextNode("Open in Explorer"));
+		clipboard.appendChild(document.createTextNode("Copy Path to clipboard"));
 
-	context_menu.appendChild(explorer);
-	context_menu.appendChild(new_line);
-	context_menu.appendChild(clipboard);
-	context_menu.style.display = "None";
-	context_menu.style.zIndex = "1000";
-	context_menu.style.position = "absolute";
+		context_menu.appendChild(explorer);
+		context_menu.appendChild(new_line);
+		context_menu.appendChild(clipboard);
+		context_menu.style.display = "None";
+		context_menu.style.zIndex = "1000";
+		context_menu.style.position = "absolute";
 
-	this.context_menu = context_menu;
-	this.explorer = explorer;
-	this.clipboard = clipboard;
+		TWExeWidget.prototype.context_menu = context_menu;
+		TWExeWidget.prototype.explorer = explorer;
+		TWExeWidget.prototype.clipboard = clipboard;
 
-
-	//close the context menu on any other click
-	document.onmousedown = function (event) {
-		if (event.target == self.clipboard || event.target == self.explorer) {
-			event.target.click();
-		}
-		self.context_menu.style.display = "None";
-	};
+		//close the context menu on any other click
+		document.onmousedown = function (event) {
+			if (event.target == TWExeWidget.prototype.clipboard || event.target == TWExeWidget.prototype.explorer) {
+				event.target.click();
+			}
+			TWExeWidget.prototype.context_menu.style.display = "None";
+		};
+	}
 };
 
 /*
 Inherit from the base widget class
 */
 TWExeWidget.prototype = new Widget();
+
+/*
+set class variables	initally to null, we will create them when we first get the chance
+*/
+TWExeWidget.prototype.context_menu = null;
+TWExeWidget.prototype.explorer = null;
+TWExeWidget.prototype.clipboard = null;
+
 
 /*
 Render this widget into the DOM
@@ -116,22 +122,22 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 
 	button.oncontextmenu = function (event) {
 		//display the context menu in the correct place
-		self.context_menu.style.display = "block";
-		self.context_menu.style.top = mouseY(event) + "px";
-		self.context_menu.style.left = mouseX(event) + "px";
+		TWExeWidget.prototype.context_menu.style.display = "block";
+		TWExeWidget.prototype.context_menu.style.top = mouseY(event) + "px";
+		TWExeWidget.prototype.context_menu.style.left = mouseX(event) + "px";
 		//clone the elements to rid us of the old event listeners
-		var old_element = self.explorer;
+		var old_element = TWExeWidget.prototype.explorer;
 		var new_element = old_element.cloneNode(true);
 		old_element.parentNode.replaceChild(new_element, old_element);
-		self.explorer = new_element;
+		TWExeWidget.prototype.explorer = new_element;
 
-		var old_element = self.clipboard;
+		var old_element = TWExeWidget.prototype.clipboard;
 		var new_element = old_element.cloneNode(true);
 		old_element.parentNode.replaceChild(new_element, old_element);
-		self.clipboard = new_element;
+		TWExeWidget.prototype.clipboard = new_element;
 
 		//add custom click events to the context buttons
-		self.explorer.addEventListener("click", function (event) {			
+		TWExeWidget.prototype.explorer.addEventListener("click", function (event) {
 			if (self.file) {
 				self.openFile(event);			
 				event.preventDefault();
@@ -142,7 +148,7 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 		}
 		,false);
 
-		self.clipboard.addEventListener("click", function (event) {
+		TWExeWidget.prototype.clipboard.addEventListener("click", function (event) {
 			if (self.file) {
 				self.copyToClip(event);
 				event.preventDefault();
