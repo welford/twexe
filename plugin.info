@@ -1,0 +1,9 @@
+{
+	"title": "$:/plugins/welford/twexe",
+	"description": "runs local batch files, open in folder etc also optional",
+	"author": "James W. Anderson",
+	"version": "0.0.1",
+	"core-version": ">=5.0.0",
+	"source": "https://github.com/Welford/twexe",
+	"plugin-type": "plugin"
+}
