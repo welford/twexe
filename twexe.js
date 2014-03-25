@@ -13,6 +13,7 @@ twexe widget
 /*global $tw: false */
 //"use strict";
 
+var target_file_field = "twexe_target";
 
 function mouseX(evt) {
 	if (evt.pageX) {
@@ -46,15 +47,19 @@ var TWExeWidget = function(parseTreeNode,options) {
 	if (TWExeWidget.prototype.context_menu == null) {
 		var context_menu = document.createElement("div");
 		var explorer = document.createElement("button");
-		var new_line = document.createElement("br");
 		var clipboard = document.createElement("button");
+		var open_tiddler = document.createElement("button");
 
-		explorer.appendChild(document.createTextNode("Open in Explorer"));
-		clipboard.appendChild(document.createTextNode("Copy Path to clipboard"));
+		explorer.innerHTML = "Open in Explorer";
+		clipboard.innerHTML = "Copy Path to clipboard";
+		open_tiddler.innerHTML = "Open Defining Tiddler";
 
 		context_menu.appendChild(explorer);
-		context_menu.appendChild(new_line);
+		context_menu.appendChild(document.createElement("br"));
 		context_menu.appendChild(clipboard);
+		context_menu.appendChild(document.createElement("br"));
+		context_menu.appendChild(open_tiddler);
+		
 		context_menu.style.display = "None";
 		context_menu.style.zIndex = "1000";
 		context_menu.style.position = "absolute";
@@ -62,12 +67,13 @@ var TWExeWidget = function(parseTreeNode,options) {
 		TWExeWidget.context_menu = context_menu;
 		TWExeWidget.explorer = explorer;
 		TWExeWidget.clipboard = clipboard;
+		TWExeWidget.open_tiddler = open_tiddler;
 
 		document.body.appendChild(TWExeWidget.context_menu)
 
 		//close the context menu on any other click
 		document.onmousedown = function (event) {
-			if (event.target == TWExeWidget.clipboard || event.target == TWExeWidget.explorer) {
+			if (event.target == TWExeWidget.clipboard || event.target == TWExeWidget.explorer || event.target == TWExeWidget.open_tiddler) {
 				event.target.click();
 			}
 			TWExeWidget.context_menu.style.display = "None";
@@ -86,6 +92,7 @@ set class variables	initally to null, we will create them when we first get the 
 TWExeWidget.context_menu = null;
 TWExeWidget.explorer = null;
 TWExeWidget.clipboard = null;
+TWExeWidget.open_tiddler = null;
 
 
 /*
@@ -111,6 +118,30 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 		button.setAttribute("style", this.style);
 	}
 
+	//first 
+	//set the button based on a tiddler
+	if (this.src_tiddler) {
+		source_tid = this.wiki.getTiddler(this.src_tiddler);
+		if (source_tid) {
+			//set button title
+			button.innerHTML = source_tid.fields.title;
+			//set exe location if we have it
+			if (source_tid.hasField(target_file_field)) {
+				this.file = source_tid.fields[target_file_field];
+			}
+			//set hover comment
+			var comment = this.wiki.getTiddlerText(this.src_tiddler);
+			if ( comment ) {
+				button.setAttribute("title", comment);
+			}
+		}
+	}
+	//then set the other values handed to us, if they need to be overridden
+	//has presidence over a tiddler comment
+	if (this.comment) {
+		button.setAttribute("title", this.comment);
+	}
+	
 	// Add a click event handler
 	button.addEventListener("click", function (event) {		
 		if (self.file) {
@@ -127,6 +158,7 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 		TWExeWidget.context_menu.style.display = "block";
 		TWExeWidget.context_menu.style.top = mouseY(event) + "px";
 		TWExeWidget.context_menu.style.left = mouseX(event) + "px";
+
 		//clone the elements to rid us of the old event listeners
 		var old_element = TWExeWidget.explorer;
 		var new_element = old_element.cloneNode(true);
@@ -138,26 +170,40 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 		old_element.parentNode.replaceChild(new_element, old_element);
 		TWExeWidget.clipboard = new_element;
 
+		var old_element = TWExeWidget.open_tiddler;
+		var new_element = old_element.cloneNode(true);
+		old_element.parentNode.replaceChild(new_element, old_element);
+		TWExeWidget.open_tiddler = new_element;
+		//if this isn't based on a source tiddler don't display it
+		if (self.src_tiddler) {
+			TWExeWidget.open_tiddler.style.display = "block";
+		}
+		else {			
+			TWExeWidget.open_tiddler.style.display = "None";
+		}
+
 		//add custom click events to the context buttons
-		TWExeWidget.explorer.addEventListener("click", function (event) {
-			if (self.file) {
-				self.openFile(event);			
-				event.preventDefault();
-				event.stopPropagation();
-				return true;
-			}
-			return false;
+		TWExeWidget.explorer.addEventListener("click", function (event) {			
+			self.openFile(event);			
+			event.preventDefault();
+			event.stopPropagation();
+			return true;			
 		}
 		,false);
 
 		TWExeWidget.clipboard.addEventListener("click", function (event) {
-			if (self.file) {
-				self.copyToClip(event);
-				event.preventDefault();
-				event.stopPropagation();
-				return true;
-			}
-			return false;
+			self.copyToClip(event);
+			event.preventDefault();
+			event.stopPropagation();
+			return true;
+		}
+		, false);
+
+		TWExeWidget.open_tiddler.addEventListener("click", function (event) {
+			self.OpenDefiningTiddler(event);
+			event.preventDefault();
+			event.stopPropagation();
+			return true;			
 		}
 		, false);
 
@@ -166,37 +212,68 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 
 	// Insert element	
 	parent.insertBefore(button, nextSibling);
-	//parent.appendChild(TWExeWidget.context_menu);
 
 	this.renderChildren(button, null);
 	this.domNodes.push(button);
-
 };
 
 TWExeWidget.prototype.runFile = function (event) {
-	WshShell = new ActiveXObject("WScript.Shell");	
-	WshShell.Run("cmd /c " + this.file);	
+	if (this.file) {
+		WshShell = new ActiveXObject("WScript.Shell");
+		WshShell.Run("cmd /c " + this.file);
+	} else {
+		alert("file parameter incorrectly set")
+	}
 };
 
-TWExeWidget.prototype.openFile = function (event) {	
-	WshShell = new ActiveXObject("WScript.Shell");
-	WshShell.Run("explorer /select, " + this.file);
+TWExeWidget.prototype.openFile = function (event) {
+	if (this.file) {
+		WshShell = new ActiveXObject("WScript.Shell");
+		WshShell.Run("explorer /select, " + this.file);
+	}
+	else {
+		alert("file parameter incorrectly set")
+	}
 };
 
 TWExeWidget.prototype.copyToClip = function (event) {
-	window.clipboardData.setData("Text", this.file);
-	window.clipboardData.getData("Text");  // To copy from clipboard
+	if (this.file) {
+		window.clipboardData.setData("Text", this.file);
+		window.clipboardData.getData("Text");  // To copy from clipboard
+	}
+	else {
+		alert("file parameter not set")
+	}
 };
 
-
+TWExeWidget.prototype.OpenDefiningTiddler = function (event) {
+	
+	var bounds = this.domNodes[0].getBoundingClientRect();
+	this.dispatchEvent({
+		type: "tw-navigate",
+		navigateTo: this.src_tiddler,
+		navigateFromTitle: this.getVariable("storyTiddler"),
+		navigateFromNode: this,
+		navigateFromClientRect: {
+			top: bounds.top, left: bounds.left, width: bounds.width, right: bounds.right, bottom: bounds.bottom, height: bounds.height
+		},
+		navigateSuppressNavigation: event.metaKey || event.ctrlKey || (event.button === 1)
+	});
+};
 
 /*
 Compute the internal state of the widget
 */
 TWExeWidget.prototype.execute = function () {
 	// Get attributes	
+	this.src_tiddler = this.getAttribute("tiddler");
+	//not sure whether the below should override info in the above or not...
+	//for now it does...but this may change later
 	this.file = this.getAttribute("file");
-	this["class"] = this.getAttribute("class","");
+	this.comment = this.getAttribute("comment");
+
+	//other genral attributes
+	this["class"] = this.getAttribute("class", "");
 	this.style = this.getAttribute("style");
 	this.selectedClass = this.getAttribute("selectedClass");
 	this.defaultSetValue = this.getAttribute("default");
