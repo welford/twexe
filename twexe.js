@@ -14,6 +14,7 @@ twexe widget
 //"use strict";
 
 var target_file_field = "twexe_target";
+var button_name_field = "twexe_name";
 
 function mouseX(evt) {
 	if (evt.pageX) {
@@ -124,10 +125,17 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 		source_tid = this.wiki.getTiddler(this.src_tiddler);
 		if (source_tid) {
 			//set button title
-			button.innerHTML = source_tid.fields.title;
+
+			if (source_tid.hasField(button_name_field)) {
+				button.innerHTML = source_tid.fields[target_file_field];
+			}
+			else {
+				button.innerHTML = source_tid.fields.title;
+			}
+
 			//set exe location if we have it
 			if (source_tid.hasField(target_file_field)) {
-				this.file = source_tid.fields[target_file_field];
+				this.target = source_tid.fields[target_file_field];
 			}
 			//set hover comment
 			var comment = this.wiki.getTiddlerText(this.src_tiddler);
@@ -144,7 +152,7 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 	
 	// Add a click event handler
 	button.addEventListener("click", function (event) {		
-		if (self.file) {
+		if (self.target) {
 			self.runFile(event);
 			event.preventDefault();
 			event.stopPropagation();
@@ -218,18 +226,18 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 };
 
 TWExeWidget.prototype.runFile = function (event) {
-	if (this.file) {
+	if (this.target) {
 		WshShell = new ActiveXObject("WScript.Shell");
-		WshShell.Run("cmd /c " + this.file);
+		WshShell.Run("cmd /c " + this.target);
 	} else {
 		alert("file parameter incorrectly set")
 	}
 };
 
 TWExeWidget.prototype.openFile = function (event) {
-	if (this.file) {
+	if (this.target) {
 		WshShell = new ActiveXObject("WScript.Shell");
-		WshShell.Run("explorer /select, " + this.file);
+		WshShell.Run("explorer /select, " + this.target);
 	}
 	else {
 		alert("file parameter incorrectly set")
@@ -237,8 +245,8 @@ TWExeWidget.prototype.openFile = function (event) {
 };
 
 TWExeWidget.prototype.copyToClip = function (event) {
-	if (this.file) {
-		window.clipboardData.setData("Text", this.file);
+	if (this.target) {
+		window.clipboardData.setData("Text", this.target);
 		window.clipboardData.getData("Text");  // To copy from clipboard
 	}
 	else {
@@ -269,9 +277,8 @@ TWExeWidget.prototype.execute = function () {
 	this.src_tiddler = this.getAttribute("tiddler");
 	//not sure whether the below should override info in the above or not...
 	//for now it does...but this may change later
-	this.file = this.getAttribute("file");
+	this.target = this.getAttribute("target");
 	this.comment = this.getAttribute("comment");
-
 	//other genral attributes
 	this["class"] = this.getAttribute("class", "");
 	this.style = this.getAttribute("style");
