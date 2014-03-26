@@ -127,7 +127,7 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 			//set button title
 
 			if (source_tid.hasField(button_name_field)) {
-				button.innerHTML = source_tid.fields[target_file_field];
+				button.innerHTML = source_tid.fields[button_name_field];
 			}
 			else {
 				button.innerHTML = source_tid.fields.title;
@@ -149,6 +149,13 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 	if (this.comment) {
 		button.setAttribute("title", this.comment);
 	}
+
+	//add the thingy called to the title
+	if (self.target) {
+		var tmp = button.getAttribute("title")
+		button.setAttribute( "title", (tmp? tmp : "") + "\n calls : " + self.target.split("\\").join("/") );
+	}
+
 	
 	// Add a click event handler
 	button.addEventListener("click", function (event) {		
@@ -228,7 +235,7 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 TWExeWidget.prototype.runFile = function (event) {
 	if (this.target) {
 		WshShell = new ActiveXObject("WScript.Shell");
-		WshShell.Run("cmd /c " + this.target);
+		WshShell.Run("cmd /c " + this.target.split("\\").join("/") )
 	} else {
 		alert("file parameter incorrectly set")
 	}
@@ -237,7 +244,7 @@ TWExeWidget.prototype.runFile = function (event) {
 TWExeWidget.prototype.openFile = function (event) {
 	if (this.target) {
 		WshShell = new ActiveXObject("WScript.Shell");
-		WshShell.Run("explorer /select, " + this.target);
+		WshShell.Run("explorer /select, " + this.target.split("\\").join("/") );
 	}
 	else {
 		alert("file parameter incorrectly set")
@@ -246,8 +253,8 @@ TWExeWidget.prototype.openFile = function (event) {
 
 TWExeWidget.prototype.copyToClip = function (event) {
 	if (this.target) {
-		window.clipboardData.setData("Text", this.target);
-		window.clipboardData.getData("Text");  // To copy from clipboard
+		window.clipboardData.setData( "Text", this.target.split("\\").join("/") );
+		window.clipboardData.getData( "Text" );  // To copy from clipboard
 	}
 	else {
 		alert("file parameter not set")
@@ -293,7 +300,7 @@ Selectively refreshes the widget if needed. Returns true if the widget or any of
 */
 TWExeWidget.prototype.refresh = function (changedTiddlers) {
 	var changedAttributes = this.computeAttributes();
-	if (changedAttributes["class"] || changedAttributes.selectedClass || changedAttributes.style ) {
+	if (changedAttributes["class"] || changedAttributes.selectedClass || changedAttributes.style || changedAttributes.target || changedAttributes.src_tiddler || changedAttributes.comment) {
 		this.refreshSelf();
 		return true;
 	}
