@@ -7,6 +7,8 @@ Example Usage:
 
 # create a defining tiddler 
 
+in *.tid format this is:
+
 ```
 tags: $:/tags/twexe
 title: twexe_example
@@ -17,14 +19,19 @@ type: text/vnd.tiddlywiki
 sample test explaining the tool 
 ```
 
-the important parts are that it contains the two fields
+The important parts are that it contains the two fields
 
 twexe_target : a path to the folder or exe you wish to open
+and
 twexe_title  : the text on the button displayed (if no supplied it will default to the tiddler title)
 
-# create a twexe widget referencing the above one
+also optionally it can be tagged with $:/tags/twexe, which adds the button automatically to the bottom of the tiddler when it is displayed normally in the story river (i.e. not called via $twexe)
 
-'''<$twexe tiddler="twexe_example">'''
+# Create a twexe widget referencing the above Tiddler
+
+In a different tiddler put :
+
+```<$twexe tiddler="twexe_example">```
 
 this will create a button displaying "button_name" which when clicked runs C:\somefolder\test.bat.
 
