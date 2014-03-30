@@ -3,9 +3,9 @@ twexe
 
 Tiddlywiki widget to run batch/exes on a local machine. Intended for an hta flavoured TW, not suitable for anything online.
 
-Example Usage:
+#Usage
 
-# create a defining tiddler 
+## Create a defining tiddler 
 
 in *.tid format this is:
 
@@ -27,7 +27,7 @@ twexe_title  : the text on the button displayed (if no supplied it will default 
 
 also optionally it can be tagged with $:/tags/twexe, which adds the button automatically to the bottom of the tiddler when it is displayed normally in the story river (i.e. not called via $twexe)
 
-# Create a twexe widget referencing the above Tiddler
+## Create a twexe widget referencing the above Tiddler
 
 In a different tiddler put :
 
