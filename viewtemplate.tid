@@ -1,0 +1,6 @@
+title: $:/plugins/welford/twexe/viewtemplate
+tags: [[$:/tags/ViewTemplate]]
+
+<$list filter="[is[current]tag[$:/tags/twexe]]" variable="listItem">
+<$twexe/>
+</$list>

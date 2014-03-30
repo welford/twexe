@@ -4,7 +4,6 @@ type: application/javascript
 module-type: widget
 
 twexe widget
-
 \*/
 
 (function(){
@@ -14,7 +13,7 @@ twexe widget
 //"use strict";
 
 var target_file_field = "twexe_target";
-var button_name_field = "twexe_name";
+var button_name_field = "twexe_title";
 
 function mouseX(evt) {
 	if (evt.pageX) {
@@ -96,70 +95,81 @@ TWExeWidget.clipboard = null;
 TWExeWidget.open_tiddler = null;
 
 
+TWExeWidget.prototype.GetLatestDetails = function ()
+{
+	this.target = "undefined";
+	this.name = "undefined";
+	this.comment = "undefined";
+
+	this.src_tiddler = this.getAttribute("tiddler", this.getVariable("currentTiddler"));//if missing then use the current tiddler...
+	//if (!this.src_tiddler) {						//...which is done here
+	//	this.src_tiddler = this.getVariable("storyTiddler");
+	//}
+
+	//get defaults for things that are not set
+	source_tid = this.wiki.getTiddler(this.src_tiddler);
+	if (source_tid) {
+		//set button target if not set already
+		if (source_tid.hasField(target_file_field)) {
+			this.target = source_tid.fields[target_file_field];
+		}
+		//set button title if not set already
+		if (source_tid.hasField(button_name_field)) {
+			this.name = source_tid.fields[button_name_field];
+		} else {
+			this.name = this.src_tiddler;
+		}
+		//comments too
+		var comment = this.wiki.getTiddlerText(this.src_tiddler);
+		if (comment) {
+			this.comment = comment;
+		} else {
+			this.comment = " ";
+		}
+	}	
+
+	this.isFolder = false;
+	var path = this.target.split("/").join("\\");
+	var FSO = new ActiveXObject("Scripting.FileSystemObject");		
+	if (FSO.FolderExists(path)) {
+		this.isFolder = true;
+	}
+}
+
 /*
 Render this widget into the DOM
 */
 TWExeWidget.prototype.render = function (parent, nextSibling) {
-	var self = this;
 	// Remember parent
 	this.parentDomNode = parent;
 	// Compute attributes and execute state
 	this.computeAttributes();
 	this.execute();
 
+	var self = this;
+
 	// Create element
 	var button = this.document.createElement("button");
-
 	// Assign classes
 	var classes = this["class"].split(" ") || [];	
 	button.className = classes.join(" ");
-
-	// Assign classes
+	// Assign styles
 	if(this.style) {
 		button.setAttribute("style", this.style);
 	}
-
-	//first 
-	//set the button based on a tiddler
-	if (this.src_tiddler) {
-		source_tid = this.wiki.getTiddler(this.src_tiddler);
-		if (source_tid) {
-			//set button title
-
-			if (source_tid.hasField(button_name_field)) {
-				button.innerHTML = source_tid.fields[button_name_field];
-			}
-			else {
-				button.innerHTML = source_tid.fields.title;
-			}
-
-			//set exe location if we have it
-			if (source_tid.hasField(target_file_field)) {
-				this.target = source_tid.fields[target_file_field];
-			}
-			//set hover comment
-			var comment = this.wiki.getTiddlerText(this.src_tiddler);
-			if ( comment ) {
-				button.setAttribute("title", comment);
-			}
-		}
-	}
-	//then set the other values handed to us, if they need to be overridden
-	//has presidence over a tiddler comment
-	if (this.comment) {
-		button.setAttribute("title", this.comment);
-	}
-
-	//add the thingy called to the title
+	//set the button name
+	button.innerHTML = (this.isFolder ? "Folder: " : "") + this.name;
+	//set hover comment
+	button.setAttribute("title", this.comment);
+	//add the target to be called to the title
 	if (self.target) {
 		var tmp = button.getAttribute("title")
 		button.setAttribute( "title", (tmp? tmp : "") + "\n calls : " + self.target.split("\\").join("/") );
 	}
-
-	
 	// Add a click event handler
 	button.addEventListener("click", function (event) {		
-		if (self.target) {
+		if (self.target) {			
+			self.GetLatestDetails(); //update details
 			self.runFile(event);
 			event.preventDefault();
 			event.stopPropagation();
@@ -198,7 +208,8 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 		}
 
 		//add custom click events to the context buttons
-		TWExeWidget.explorer.addEventListener("click", function (event) {			
+		TWExeWidget.explorer.addEventListener("click", function (event) {
+			self.GetLatestDetails(); //update details
 			self.openFile(event);			
 			event.preventDefault();
 			event.stopPropagation();
@@ -207,6 +218,7 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 		,false);
 
 		TWExeWidget.clipboard.addEventListener("click", function (event) {
+			self.GetLatestDetails(); //update details
 			self.copyToClip(event);
 			event.preventDefault();
 			event.stopPropagation();
@@ -215,6 +227,7 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 		, false);
 
 		TWExeWidget.open_tiddler.addEventListener("click", function (event) {
+			self.GetLatestDetails(); //update details
 			self.OpenDefiningTiddler(event);
 			event.preventDefault();
 			event.stopPropagation();
@@ -234,8 +247,14 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 
 TWExeWidget.prototype.runFile = function (event) {
 	if (this.target) {
-		WshShell = new ActiveXObject("WScript.Shell");
-		WshShell.Run("cmd /c " + this.target.split("\\").join("/") )
+		var path = this.target.split("/").join("\\");
+		if (this.isFolder){
+			this.openFile(event);
+		}
+		else {
+			var WshShell = new ActiveXObject("WScript.Shell");
+			WshShell.Run("cmd /c " + path )
+		}
 	} else {
 		alert("file parameter incorrectly set")
 	}
@@ -243,8 +262,15 @@ TWExeWidget.prototype.runFile = function (event) {
 
 TWExeWidget.prototype.openFile = function (event) {
 	if (this.target) {
-		WshShell = new ActiveXObject("WScript.Shell");
-		WshShell.Run("explorer /select, " + this.target.split("\\").join("/") );
+		var path = this.target.split("/").join("\\");
+		if (this.isFolder)
+		{
+			var WshShell = new ActiveXObject("WScript.Shell");
+			WshShell.Run("explorer /e, " + path);		
+		} else {
+			var WshShell = new ActiveXObject("WScript.Shell");
+			WshShell.Run("explorer /select, " + path );
+		}		
 	}
 	else {
 		alert("file parameter incorrectly set")
@@ -280,12 +306,8 @@ TWExeWidget.prototype.OpenDefiningTiddler = function (event) {
 Compute the internal state of the widget
 */
 TWExeWidget.prototype.execute = function () {
-	// Get attributes	
-	this.src_tiddler = this.getAttribute("tiddler");
-	//not sure whether the below should override info in the above or not...
-	//for now it does...but this may change later
-	this.target = this.getAttribute("target");
-	this.comment = this.getAttribute("comment");
+	this.GetLatestDetails();
+
 	//other genral attributes
 	this["class"] = this.getAttribute("class", "");
 	this.style = this.getAttribute("style");
@@ -300,7 +322,7 @@ Selectively refreshes the widget if needed. Returns true if the widget or any of
 */
 TWExeWidget.prototype.refresh = function (changedTiddlers) {
 	var changedAttributes = this.computeAttributes();
-	if (changedAttributes["class"] || changedAttributes.selectedClass || changedAttributes.style || changedAttributes.target || changedAttributes.src_tiddler || changedAttributes.comment) {
+	if (changedAttributes["class"] || changedAttributes.selectedClass || changedAttributes.style || changedAttributes.src_tiddler) {
 		this.refreshSelf();
 		return true;
 	}
