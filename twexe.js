@@ -97,42 +97,45 @@ TWExeWidget.open_tiddler = null;
 
 TWExeWidget.prototype.GetLatestDetails = function ()
 {
-	this.target = "undefined";
-	this.name = "undefined";
-	this.comment = "undefined";
+	this.target = this.getAttribute("target", null);
+	this.name = this.getAttribute("name", null);
+	this.comment = this.getAttribute("comment", null);
 
 	this.src_tiddler = this.getAttribute("tiddler", this.getVariable("currentTiddler"));//if missing then use the current tiddler...
-	//if (!this.src_tiddler) {						//...which is done here
-	//	this.src_tiddler = this.getVariable("storyTiddler");
-	//}
 
 	//get defaults for things that are not set
 	source_tid = this.wiki.getTiddler(this.src_tiddler);
 	if (source_tid) {
 		//set button target if not set already
-		if (source_tid.hasField(target_file_field)) {
+		if (this.target == null && source_tid.hasField(target_file_field)) {
 			this.target = source_tid.fields[target_file_field];
 		}
 		//set button title if not set already
-		if (source_tid.hasField(button_name_field)) {
-			this.name = source_tid.fields[button_name_field];
-		} else {
-			this.name = this.src_tiddler;
+		if (this.name == null) {
+			if (source_tid.hasField(button_name_field)) {
+				this.name = source_tid.fields[button_name_field];
+			} else {
+				this.name = this.src_tiddler;
+			}
 		}
 		//comments too
-		var comment = this.wiki.getTiddlerText(this.src_tiddler);
-		if (comment) {
-			this.comment = comment;
-		} else {
-			this.comment = " ";
+		if (this.comment == null) {
+			var comment = this.wiki.getTiddlerText(this.src_tiddler);
+			if (comment) {
+				this.comment = comment;
+			} else {
+				this.comment = " ";
+			}
 		}
 	}	
-
+	//
 	this.isFolder = false;
-	var path = this.target.split("/").join("\\");
-	var FSO = new ActiveXObject("Scripting.FileSystemObject");		
-	if (FSO.FolderExists(path)) {
-		this.isFolder = true;
+	if(this.target != null){
+		var path = this.target.split("/").join("\\");
+		var FSO = new ActiveXObject("Scripting.FileSystemObject");		
+		if (FSO.FolderExists(path)) {
+			this.isFolder = true;
+		}
 	}
 }
 
