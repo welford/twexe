@@ -1,0 +1,8 @@
+title: $:/plugins/welford/twexe/template
+tags: [[$:/tags/twexe]]
+twexe_target: path_here
+twexe_name: button_name
+twexe_cwd: .\
+twexe_args:		
+
+write a descriptiopn of the exe here

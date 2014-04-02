@@ -12,8 +12,11 @@ twexe widget
 /*global $tw: false */
 //"use strict";
 
-var target_file_field = "twexe_target";
-var button_name_field = "twexe_title";
+var target_file_field	= "twexe_target";
+var button_name_field	= "twexe_title";
+var cwd_field			= "twexe_cwd";
+var args_field			= "twexe_args";
+var nargs_field			= "twexe_nargs";
 
 function mouseX(evt) {
 	if (evt.pageX) {
@@ -100,6 +103,8 @@ TWExeWidget.prototype.GetLatestDetails = function ()
 	this.target = this.getAttribute("target", null);
 	this.name = this.getAttribute("name", null);
 	this.comment = this.getAttribute("comment", null);
+	this.cwd = this.getAttribute("cwd", null);
+	this.args = this.getAttribute("args", null);
 
 	this.src_tiddler = this.getAttribute("tiddler", this.getVariable("currentTiddler"));//if missing then use the current tiddler...
 
@@ -118,13 +123,29 @@ TWExeWidget.prototype.GetLatestDetails = function ()
 				this.name = this.src_tiddler;
 			}
 		}
-		//comments too
+		//similarly comments
 		if (this.comment == null) {
 			var comment = this.wiki.getTiddlerText(this.src_tiddler);
 			if (comment) {
 				this.comment = comment;
 			} else {
 				this.comment = " ";
+			}
+		}
+		//similarly current working directory
+		if (this.cwd == null) {
+			if (source_tid.hasField(cwd_field)) {
+				this.cwd = source_tid.fields[cwd_field];
+			} else {
+				this.cwd = ".\\";
+			}
+		}
+		//similarly arguments
+		if (this.args == null) {
+			if (source_tid.hasField(args_field)) {
+				this.args = source_tid.fields[args_field];
+			} else {
+				this.args = "";
 			}
 		}
 	}	
@@ -250,16 +271,18 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 
 TWExeWidget.prototype.runFile = function (event) {
 	if (this.target) {
-		var path = this.target.split("/").join("\\");
+		var path = this.target.split("/").join("\\");		
 		if (this.isFolder){
 			this.openFile(event);
 		}
 		else {
+			var args = this.args;
 			var WshShell = new ActiveXObject("WScript.Shell");
-			WshShell.Run("cmd /c " + path )
+			WshShell.CurrentDirectory = this.cwd
+			WshShell.Run( "cmd /c " + path + " " + args );
 		}
 	} else {
-		alert("file parameter incorrectly set")
+		alert( "file parameter incorrectly set" )
 	}
 };
 
