@@ -105,6 +105,7 @@ TWExeWidget.prototype.GetLatestDetails = function ()
 	this.comment = this.getAttribute("comment", null);
 	this.cwd = this.getAttribute("cwd", null);
 	this.args = this.getAttribute("args", null);
+	this.hasActiveX = true;
 
 	this.src_tiddler = this.getAttribute("tiddler", this.getVariable("currentTiddler"));//if missing then use the current tiddler...
 
@@ -151,11 +152,17 @@ TWExeWidget.prototype.GetLatestDetails = function ()
 	}	
 	//
 	this.isFolder = false;
-	if(this.target != null){
+	if (this.target != null) {
 		var path = this.target.split("/").join("\\");
-		var FSO = new ActiveXObject("Scripting.FileSystemObject");		
-		if (FSO.FolderExists(path)) {
-			this.isFolder = true;
+		try{
+			var FSO = new ActiveXObject("Scripting.FileSystemObject");		
+			var WshShell = new ActiveXObject("WScript.Shell");
+			if (FSO.FolderExists(WshShell.ExpandEnvironmentStrings(path))) {
+				this.isFolder = true;		
+			}
+		}
+		catch (err) {
+			this.hasActiveX = false;
 		}
 	}
 }
@@ -270,6 +277,7 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 };
 
 TWExeWidget.prototype.runFile = function (event) {
+	if (this.hasActiveX == false) { return;}
 	if (this.target) {
 		var path = this.target.split("/").join("\\");		
 		if (this.isFolder){
@@ -278,7 +286,7 @@ TWExeWidget.prototype.runFile = function (event) {
 		else {
 			var args = this.args;
 			var WshShell = new ActiveXObject("WScript.Shell");
-			WshShell.CurrentDirectory = this.cwd
+			WshShell.CurrentDirectory = WshShell.ExpandEnvironmentStrings(this.cwd);
 			WshShell.Run( "cmd /c " + path + " " + args );
 		}
 	} else {
@@ -287,6 +295,7 @@ TWExeWidget.prototype.runFile = function (event) {
 };
 
 TWExeWidget.prototype.openFile = function (event) {
+	if (this.hasActiveX == false) { return; }
 	if (this.target) {
 		var path = this.target.split("/").join("\\");
 		if (this.isFolder)
