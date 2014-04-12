@@ -1,5 +1,5 @@
 /*\
-title: $:/plugins/welford/twaexe/twexe.js
+title: $:/plugins/welford/twexe/twexe.js
 type: application/javascript
 module-type: widget
 
