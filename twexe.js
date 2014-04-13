@@ -5,13 +5,10 @@ module-type: widget
 
 twexe widget
 \*/
-
 (function(){
-
 /*jslint node: true, browser: true */
 /*global $tw: false */
 //"use strict";
-
 var target_file_field	= "twexe_target";
 var button_name_field	= "twexe_title";
 var cwd_field			= "twexe_cwd";
@@ -50,16 +47,21 @@ var TWExeWidget = function(parseTreeNode,options) {
 		var explorer = document.createElement("button");
 		var clipboard = document.createElement("button");
 		var open_tiddler = document.createElement("button");
+		var open_tiddler_args = document.createElement("button");
 
 		explorer.innerHTML = "Open in Explorer";
 		clipboard.innerHTML = "Copy Path to clipboard";
 		open_tiddler.innerHTML = "Open Defining Tiddler";
+		open_tiddler_args.innerHTML = "Open Arguments Tiddler";
 
 		context_menu.appendChild(explorer);
 		context_menu.appendChild(document.createElement("br"));
 		context_menu.appendChild(clipboard);
 		context_menu.appendChild(document.createElement("br"));
 		context_menu.appendChild(open_tiddler);
+		//context_menu.appendChild(document.createElement("br"));
+		context_menu.appendChild(open_tiddler_args);
+		
 		
 		context_menu.style.display = "None";
 		context_menu.style.zIndex = "1000";
@@ -69,12 +71,13 @@ var TWExeWidget = function(parseTreeNode,options) {
 		TWExeWidget.explorer = explorer;
 		TWExeWidget.clipboard = clipboard;
 		TWExeWidget.open_tiddler = open_tiddler;
+		TWExeWidget.open_tiddler_args = open_tiddler_args;
 
 		document.body.appendChild(TWExeWidget.context_menu)
 
 		//close the context menu on any other click
 		document.onmousedown = function (event) {
-			if (event.target == TWExeWidget.clipboard || event.target == TWExeWidget.explorer || event.target == TWExeWidget.open_tiddler) {
+			if (event.target == TWExeWidget.clipboard || event.target == TWExeWidget.explorer || event.target == TWExeWidget.open_tiddler || event.target == TWExeWidget.open_tiddler_args) {
 				event.target.click();
 			}
 			TWExeWidget.context_menu.style.display = "None";
@@ -94,6 +97,7 @@ TWExeWidget.context_menu = null;
 TWExeWidget.explorer = null;
 TWExeWidget.clipboard = null;
 TWExeWidget.open_tiddler = null;
+TWExeWidget.open_tiddler_args = null;
 
 
 TWExeWidget.prototype.GetLatestDetails = function ()
@@ -224,11 +228,12 @@ TWExeWidget.prototype.render = function (parent,nextSibling) {
 		//if this isn't based on a source tiddler don't display it
 		if (self.src_tiddler) {
 			TWExeWidget.open_tiddler.style.display = "block";
+			TWExeWidget.open_tiddler_args.style.display = "block";
 		}
 		else {			
 			TWExeWidget.open_tiddler.style.display = "None";
+			TWExeWidget.open_tiddler_args.style.display = "None";
 		}
-
 		//add custom click events to the context buttons
 		TWExeWidget.explorer.addEventListener("click",function (event) {
 			self.GetLatestDetails(); //update details
@@ -236,8 +241,7 @@ TWExeWidget.prototype.render = function (parent,nextSibling) {
 			event.preventDefault();
 			event.stopPropagation();
 			return true;			
-		}
-		,false);
+		},false);
 
 		TWExeWidget.clipboard.addEventListener("click",function (event) {
 			self.GetLatestDetails(); //update details
@@ -245,24 +249,28 @@ TWExeWidget.prototype.render = function (parent,nextSibling) {
 			event.preventDefault();
 			event.stopPropagation();
 			return true;
-		}
-		, false);
+		}, false);
 
 		TWExeWidget.open_tiddler.addEventListener("click",function (event) {
 			self.GetLatestDetails(); //update details
-			self.OpenDefiningTiddler(event);
+			self.OpenTiddler(event,self.src_tiddler);
 			event.preventDefault();
 			event.stopPropagation();
 			return true;			
-		}
-		, false);
+		}, false);
+
+		TWExeWidget.open_tiddler_args.addEventListener("click",function (event) {
+			self.GetLatestDetails(); //update details
+			self.OpenTiddler(event,self.src_tiddler+"_args");
+			event.preventDefault();
+			event.stopPropagation();
+			return true;			
+		}, false);
 
 		return false;
 	}
-
 	// Insert element	
 	parent.insertBefore(button,nextSibling);
-
 	this.renderChildren(button, null);
 	this.domNodes.push(button);
 };
@@ -314,12 +322,11 @@ TWExeWidget.prototype.copyToClip = function (event) {
 	}
 };
 
-TWExeWidget.prototype.OpenDefiningTiddler = function (event) {
-	
+TWExeWidget.prototype.OpenTiddler = function (event,name) {	
 	var bounds = this.domNodes[0].getBoundingClientRect();
 	this.dispatchEvent({
 		type: "tw-navigate",
-		navigateTo: this.src_tiddler,
+		navigateTo: name,
 		navigateFromTitle: this.getVariable("storyTiddler"),
 		navigateFromNode: this,
 		navigateFromClientRect: {
