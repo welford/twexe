@@ -1,6 +1,6 @@
 {
 	"title": "$:/plugins/welford/twexe",
-	"description": "runs local batch files, open in folder etc also optional",
+	"description": "Runs local exe/batch files. Open in folder, copy to clipboard etc also optional",
 	"author": "James W. Anderson",
 	"version": "0.0.1",
 	"core-version": ">=5.0.0",

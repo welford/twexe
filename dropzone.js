@@ -89,7 +89,16 @@ TWDropZoneWidget.prototype.handleDropEvent = function (event) {
 	$tw.utils.removeClass(this.domNodes[0],"tw-dragover");
 	// Import any files in the drop
 	var numFiles = this.wiki.readFiles(dataTransfer.files,function(tiddlerFieldsArray) {
-		self.dispatchEvent({type: "tw-import-tiddlers", param: JSON.stringify(tiddlerFieldsArray)});
+		//format the dropped tiddlers 		
+		for(var t=0; t<tiddlerFieldsArray.length; t++) {
+			tiddlerFieldsArray[t].tags = "[[$:/tags/twexe]]";
+			tiddlerFieldsArray[t].text = "explanation here";
+			tiddlerFieldsArray[t].type = undefined;
+			tiddlerFieldsArray[t].twexe_target = "path here";
+			tiddlerFieldsArray[t].twexe_name = tiddlerFieldsArray[t].title;
+			tiddlerFieldsArray[t].twexe_cwd = ".\\";
+		}
+		self.dispatchEvent({type: "tw-import-tiddlers", param: JSON.stringify(tiddlerFieldsArray)});		
 	});
 	// Try to import the various data types we understand
 	if(numFiles === 0) {
@@ -214,6 +223,6 @@ TWDropZoneWidget.prototype.refresh = function (changedTiddlers) {
 	return this.refreshChildren(changedTiddlers);
 };
 
-exports.twdropzone = TWDropZoneWidget;
+exports.twexedropzone = TWDropZoneWidget;
 
 })();

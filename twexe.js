@@ -15,8 +15,6 @@ twexe widget
 var target_file_field	= "twexe_target";
 var button_name_field	= "twexe_title";
 var cwd_field			= "twexe_cwd";
-var args_field			= "twexe_args";
-var nargs_field			= "twexe_nargs";
 
 function mouseX(evt) {
 	if (evt.pageX) {
@@ -104,10 +102,9 @@ TWExeWidget.prototype.GetLatestDetails = function ()
 	this.name = this.getAttribute("name", null);
 	this.comment = this.getAttribute("comment", null);
 	this.cwd = this.getAttribute("cwd", null);
-	this.args = this.getAttribute("args", null);
 	this.hasActiveX = true;
 
-	this.src_tiddler = this.getAttribute("tiddler", this.getVariable("currentTiddler"));//if missing then use the current tiddler...
+	this.src_tiddler = this.getAttribute("tiddler",this.getVariable("currentTiddler"));//if missing then use the current tiddler...
 
 	//get defaults for things that are not set
 	source_tid = this.wiki.getTiddler(this.src_tiddler);
@@ -141,14 +138,6 @@ TWExeWidget.prototype.GetLatestDetails = function ()
 				this.cwd = ".\\";
 			}
 		}
-		//similarly arguments
-		if (this.args == null) {
-			if (source_tid.hasField(args_field)) {
-				this.args = source_tid.fields[args_field];
-			} else {
-				this.args = "";
-			}
-		}
 	}	
 	//
 	this.isFolder = false;
@@ -170,7 +159,7 @@ TWExeWidget.prototype.GetLatestDetails = function ()
 /*
 Render this widget into the DOM
 */
-TWExeWidget.prototype.render = function (parent, nextSibling) {
+TWExeWidget.prototype.render = function (parent,nextSibling) {
 	// Remember parent
 	this.parentDomNode = parent;
 	// Compute attributes and execute state
@@ -195,7 +184,9 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 	//add the target to be called to the title
 	if (self.target) {
 		var tmp = button.getAttribute("title")
-		button.setAttribute( "title", (tmp? tmp : "") + "\n calls : " + self.target.split("\\").join("/") );
+		button.setAttribute( "title", (tmp? tmp : "") + "\
+\n- - - - - - - - - - - - - - - - - - - - - - - - - - - -\
+\ncalls : " + self.target.split("\\").join("/") );
 	}
 	// Add a click event handler
 	button.addEventListener("click", function (event) {		
@@ -239,7 +230,7 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 		}
 
 		//add custom click events to the context buttons
-		TWExeWidget.explorer.addEventListener("click", function (event) {
+		TWExeWidget.explorer.addEventListener("click",function (event) {
 			self.GetLatestDetails(); //update details
 			self.openFile(event);			
 			event.preventDefault();
@@ -248,7 +239,7 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 		}
 		,false);
 
-		TWExeWidget.clipboard.addEventListener("click", function (event) {
+		TWExeWidget.clipboard.addEventListener("click",function (event) {
 			self.GetLatestDetails(); //update details
 			self.copyToClip(event);
 			event.preventDefault();
@@ -257,7 +248,7 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 		}
 		, false);
 
-		TWExeWidget.open_tiddler.addEventListener("click", function (event) {
+		TWExeWidget.open_tiddler.addEventListener("click",function (event) {
 			self.GetLatestDetails(); //update details
 			self.OpenDefiningTiddler(event);
 			event.preventDefault();
@@ -270,7 +261,7 @@ TWExeWidget.prototype.render = function (parent, nextSibling) {
 	}
 
 	// Insert element	
-	parent.insertBefore(button, nextSibling);
+	parent.insertBefore(button,nextSibling);
 
 	this.renderChildren(button, null);
 	this.domNodes.push(button);
@@ -284,7 +275,8 @@ TWExeWidget.prototype.runFile = function (event) {
 			this.openFile(event);
 		}
 		else {
-			var args = this.args;
+			var args = this.wiki.getTiddlerText(this.src_tiddler+"_args");
+			if (!args){ args = "";}
 			var WshShell = new ActiveXObject("WScript.Shell");
 			WshShell.CurrentDirectory = WshShell.ExpandEnvironmentStrings(this.cwd);
 			WshShell.Run( "cmd /c " + path + " " + args );
