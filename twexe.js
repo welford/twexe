@@ -269,7 +269,7 @@ TWExeWidget.prototype.render = function (parent,nextSibling) {
 
 		return false;
 	}
-	// Insert element	
+    // Insert element	
 	parent.insertBefore(button,nextSibling);
 	this.renderChildren(button, null);
 	this.domNodes.push(button);
@@ -325,7 +325,7 @@ TWExeWidget.prototype.copyToClip = function (event) {
 TWExeWidget.prototype.OpenTiddler = function (event,name) {	
 	var bounds = this.domNodes[0].getBoundingClientRect();
 	this.dispatchEvent({
-		type: "tw-navigate",
+		type: "tm-navigate",
 		navigateTo: name,
 		navigateFromTitle: this.getVariable("storyTiddler"),
 		navigateFromNode: this,
