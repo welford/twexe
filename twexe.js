@@ -108,7 +108,8 @@ TWExeWidget.prototype.GetLatestDetails = function ()
 	this.cwd = this.getAttribute("cwd", null);
 	this.hasActiveX = true;
 
-	this.src_tiddler = this.getAttribute("tiddler",this.getVariable("currentTiddler"));//if missing then use the current tiddler...
+	this.src_tiddler = this.getAttribute("tiddler",this.getVariable("currentTiddler"));	//if missing then use the current tiddler...
+	this.tiddler_args = this.getAttribute("args",this.wiki.getTiddlerText(this.src_tiddler+"_args"));//if missing then use the args tiddler...
 
 	//get defaults for things that are not set
 	source_tid = this.wiki.getTiddler(this.src_tiddler);
@@ -283,11 +284,16 @@ TWExeWidget.prototype.runFile = function (event) {
 			this.openFile(event);
 		}
 		else {
-			var args = this.wiki.getTiddlerText(this.src_tiddler+"_args");
+			var args = this.tiddler_args;
 			if (!args){ args = "";}
 			var WshShell = new ActiveXObject("WScript.Shell");
 			WshShell.CurrentDirectory = WshShell.ExpandEnvironmentStrings(this.cwd);
-			WshShell.Run( "cmd /c " + path + " " + args );
+			if(path.indexOf(".bat") > -1 || path.indexOf(".cmd") > -1){
+				WshShell.Run( "cmd /c " + path + " " + args );
+			}else{
+				WshShell.Run( "cmd /c " + path + " " + args, 0 ); //if it is not a batch file then hide the batch window that spawns it
+			}
+
 		}
 	} else {
 		alert( "file parameter incorrectly set" )
