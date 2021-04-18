@@ -95,7 +95,6 @@ TWDropZoneWidget.prototype.handleDropEvent = function (event) {
 			tiddlerFieldsArray[t].text = "explanation here";
 			tiddlerFieldsArray[t].type = undefined;
 			tiddlerFieldsArray[t].twexe_target = "path here";
-			tiddlerFieldsArray[t].twexe_name = tiddlerFieldsArray[t].title;
 			tiddlerFieldsArray[t].twexe_cwd = ".\\";
 		}
 		self.dispatchEvent({type: "tc-import-tiddlers", param: JSON.stringify(tiddlerFieldsArray)});		

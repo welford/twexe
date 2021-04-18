@@ -1,0 +1,81 @@
+title: $:/plugins/welford/twexe/readme
+
+! twexe
+
+Tiddlywiki widget to run batch/exes on a local machine. Intended for an hta flavoured TW, not suitable for anything online.
+
+!!Usage
+
+!!! Create a defining tiddler 
+
+in *.tid format this is:
+
+```
+tags: $:/tags/twexe
+title: twexe_example
+twexe_target: C:\somefolder\test.bat
+twexe_name: button_name
+twexe_cwd: "c:\temp\"
+twexe_tooltip: "click this to run test"
+type: text/vnd.tiddlywiki
+
+sample test explaining the tool 
+```
+
+The important parts are that it contains the two fields
+
+twexe_target : a path to the folder or exe you wish to open
+and
+twexe_name  : the text on the button displayed (if no supplied it will default to the tiddler title)
+
+also optionally it can be tagged with $:/tags/twexe, which adds the button automatically to the bottom of the tiddler when it is displayed normally in the story river (i.e. not called via $twexe)
+
+!!! Create a twexe widget referencing the above Tiddler
+
+In a different tiddler put :
+
+``<$twexe tiddler="twexe_example">``
+
+this will create a button displaying "button_name" which when clicked runs C:\somefolder\test.bat.
+
+Right clicking the button gives you the options to open the file in it's folder, to copy the path to the clipboard, and to open the defining tiddler.
+
+If twexe_target is a folder then clicking on the button will simply open the folder.
+
+!! Override tiddler values via macro
+
+``<$twexe tiddler="twexe_example" name="override twexe_name" cwd="override twexe_cwd" tooltip="override tooltip" twexe_target="override twexe_target">``
+
+!! Run batch from macro
+
+Put the batch contents in the tiddler, leave "twexe_target" blank
+
+This will creat a temporary batch file (twexe.bat) in %TEMP% (can be changed in $:/plugins/welford/twexe/tmpdir) and fill it with the contents of the tiddler
+
+Tiddler should look like this:
+
+```
+created: 20210417195758044
+creator: ジェームス
+tags: $:/tags/twexe
+title: This Is TWEXE
+twexe_cwd: .\
+twexe_name: TWEXE Example
+twexe_target: 
+type: text/plain
+
+echo Hello
+echo Hello
+echo Hello
+echo Hello
+echo Hello
+pause
+```
+
+
+!!! You can transclude the view template too
+
+```
+{{twexe_example||$:/plugins/welford/twexe/viewtemplate}}
+{{twexe_example||$:/plugins/welford/twexe/buttontemplate}}
+```
