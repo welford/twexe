@@ -1,4 +1,16 @@
-title: $:/plugins/welford/twsr/viewtemplate
+title: $:/plugins/welford/twexe/viewtemplate
 tags: [[$:/tags/ViewTemplate]]
 
-<$list filter="[is[current]tag[$:/tags/twsr]]" variable="listItem"><$twsr/></$list>
+\define arg_tw()
+$(main_title)$_args
+\end
+
+<$list filter="[is[current]tag[$:/tags/twexe]]" variable="listItem">
+<$twexe/>
+<br/>
+Arguments:
+<br/>
+<$set name="main_title" value={{!!title}}>
+<$edit-text tiddler=<<arg_tw>> default="" tag="input" class="twexe_args"/>
+</$set>
+</$list>

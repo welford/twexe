@@ -1,0 +1,8 @@
+title: $:/plugins/welford/twexe/css
+type: text/css
+tags: $:/tags/Stylesheet
+
+input.twexe_args
+{
+width:100%;
+}
