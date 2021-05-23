@@ -1,6 +1,0 @@
-title: $:/plugins/welford/twexe/drop
-tags: twexe
-
-<$dropzone>
-<div style="height:100px;border:2px dashed red"></div>
-</$dropzone>

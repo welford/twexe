@@ -1,10 +1,10 @@
 {
-	"title": "$:/plugins/welford/twexe",
-	"description": "Runs local exe/batch files. Open in folder, copy to clipboard etc also optional",
+	"title": "$:/plugins/welford/twsr",
+	"description": "Spaced Repeatition",
 	"author": "James W. Anderson",
 	"version": "1.0.0",
 	"core-version": ">=5.0.0",
-	"source": "https://github.com/Welford/twexe",
+	"source": "https://github.com/Welford/twsr",
 	"list": "readme",
 	"plugin-type": "plugin"
 }

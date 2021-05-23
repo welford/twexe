@@ -1,3 +1,0 @@
-title: $:/plugins/welford/twexe/buttontemplate
-
-<$list filter="[is[current]tag[$:/tags/twexe]]" variable="listItem"><$twexe/></$list>

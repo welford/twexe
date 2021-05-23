@@ -1,4 +1,0 @@
-title: $:/plugins/welford/twexe/create
-tags: twexe
-
-<$button message="tw-new-tiddler" class="tc-btn-invisible" param="$:/plugins/welford/twexe/template">{{$:/core/images/new-button}}</$button>
