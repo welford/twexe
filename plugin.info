@@ -2,7 +2,7 @@
 	"title": "$:/plugins/welford/twexe",
 	"description": "Runs local exe/batch files. Open in folder, copy to clipboard etc also optional",
 	"author": "James W. Anderson",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"core-version": ">=5.0.0",
 	"source": "https://github.com/Welford/twexe",
 	"list": "readme",

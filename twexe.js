@@ -176,98 +176,102 @@ TWExeWidget.prototype.render = function (parent,nextSibling) {
 	//set the button name
 	button.innerHTML = (this.isFolder ? "Folder: " : "") + this.name;
 	//set hover comment
-	button.setAttribute("title", this.tooptip);
+	if(!button.isTiddlyWikiFakeDom){
+		button.setAttribute("title", this.tooptip);
 	//add the target to be called to the title
-	if (self.target) {
-		var tmp = button.getAttribute("title")
-		button.setAttribute( "title", (tmp? tmp : "") + "\
+		if (self.target) {
+			var tmp = button.getAttribute("title")
+			button.setAttribute( "title", (tmp? tmp : "") + "\
 \n- - - - - - - - - - - - - - - - - - - - - - - - - - - -\
 \ncalls : " + self.target.split("\\").join("/") );
-	}
-	// Add a click event handler
-	button.addEventListener("click", function (event) {
-		self.GetLatestDetails(); //update details
-		if(self.isImmediate){
-			self.runTiddler(event);
-		}else {
-			self.runFile(event);
 		}
-		event.preventDefault();
-		event.stopPropagation();
-		return true;
-	}, false);
 
-	button.oncontextmenu = function (event) {
-		//display the context menu in the correct place
-		TWExeWidget.context_menu.style.display = "block";
-		TWExeWidget.context_menu.style.top = mouseY(event) + "px";
-		TWExeWidget.context_menu.style.left = mouseX(event) + "px";
-
-		//clone the elements to rid us of the old event listeners
-		var old_element = TWExeWidget.explorer;
-		var new_element = old_element.cloneNode(true);
-		old_element.parentNode.replaceChild(new_element, old_element);
-		TWExeWidget.explorer = new_element;
-
-		var old_element = TWExeWidget.clipboard;
-		var new_element = old_element.cloneNode(true);
-		old_element.parentNode.replaceChild(new_element, old_element);
-		TWExeWidget.clipboard = new_element;
-
-		var old_element = TWExeWidget.open_tiddler;
-		var new_element = old_element.cloneNode(true);
-		old_element.parentNode.replaceChild(new_element, old_element);
-		TWExeWidget.open_tiddler = new_element;
-		//if this isn't based on a source tiddler don't display it
-		if (self.tiddler_name) {
-			TWExeWidget.open_tiddler.style.display = TWExeWidget.open_tiddler_args.style.display = "block";
-		}
-		else {
-			TWExeWidget.open_tiddler.style.display = TWExeWidget.open_tiddler_args.style.display = "None";
-		}
-		//if there is no target don't attempt to open it in explorer
-		if(self.target.trim().length == 0){
-			TWExeWidget.explorer.style.display = TWExeWidget.clipboard.style.display ="None";
-		}else{
-			TWExeWidget.explorer.style.display = TWExeWidget.clipboard.style.display = "block";
-		}
-		//add custom click events to the context buttons
-		TWExeWidget.explorer.addEventListener("click",function (event) {
+			// Add a click event handler
+		button.addEventListener("click", function (event) {
 			self.GetLatestDetails(); //update details
-			self.openFile(event);			
-			event.preventDefault();
-			event.stopPropagation();
-			return true;			
-		},false);
-
-		TWExeWidget.clipboard.addEventListener("click",function (event) {
-			self.GetLatestDetails(); //update details
-			self.copyToClip(event);
+			if(self.isImmediate){
+				self.runTiddler(event);
+			}else {
+				self.runFile(event);
+			}
 			event.preventDefault();
 			event.stopPropagation();
 			return true;
 		}, false);
 
-		TWExeWidget.open_tiddler.addEventListener("click",function (event) {
-			self.GetLatestDetails(); //update details
-			self.OpenTiddler(event,self.tiddler_name);
-			event.preventDefault();
-			event.stopPropagation();
-			return true;			
-		}, false);
+		button.oncontextmenu = function (event) {
+			//display the context menu in the correct place
+			TWExeWidget.context_menu.style.display = "block";
+			TWExeWidget.context_menu.style.top = mouseY(event) + "px";
+			TWExeWidget.context_menu.style.left = mouseX(event) + "px";
 
-		TWExeWidget.open_tiddler_args.addEventListener("click",function (event) {
-			self.GetLatestDetails(); //update details
-			self.OpenTiddler(event,self.tiddler_name+"_args");
-			event.preventDefault();
-			event.stopPropagation();
-			return true;			
-		}, false);
+			//clone the elements to rid us of the old event listeners
+			var old_element = TWExeWidget.explorer;
+			var new_element = old_element.cloneNode(true);
+			old_element.parentNode.replaceChild(new_element, old_element);
+			TWExeWidget.explorer = new_element;
 
-		return false;
+			var old_element = TWExeWidget.clipboard;
+			var new_element = old_element.cloneNode(true);
+			old_element.parentNode.replaceChild(new_element, old_element);
+			TWExeWidget.clipboard = new_element;
+
+			var old_element = TWExeWidget.open_tiddler;
+			var new_element = old_element.cloneNode(true);
+			old_element.parentNode.replaceChild(new_element, old_element);
+			TWExeWidget.open_tiddler = new_element;
+			//if this isn't based on a source tiddler don't display it
+			if (self.tiddler_name) {
+				TWExeWidget.open_tiddler.style.display = TWExeWidget.open_tiddler_args.style.display = "block";
+			}
+			else {
+				TWExeWidget.open_tiddler.style.display = TWExeWidget.open_tiddler_args.style.display = "None";
+			}
+			//if there is no target don't attempt to open it in explorer
+			if(self.target.trim().length == 0){
+				TWExeWidget.explorer.style.display = TWExeWidget.clipboard.style.display ="None";
+			}else{
+				TWExeWidget.explorer.style.display = TWExeWidget.clipboard.style.display = "block";
+			}
+			//add custom click events to the context buttons
+			TWExeWidget.explorer.addEventListener("click",function (event) {
+				self.GetLatestDetails(); //update details
+				self.openFile(event);			
+				event.preventDefault();
+				event.stopPropagation();
+				return true;			
+			},false);
+
+			TWExeWidget.clipboard.addEventListener("click",function (event) {
+				self.GetLatestDetails(); //update details
+				self.copyToClip(event);
+				event.preventDefault();
+				event.stopPropagation();
+				return true;
+			}, false);
+
+			TWExeWidget.open_tiddler.addEventListener("click",function (event) {
+				self.GetLatestDetails(); //update details
+				self.OpenTiddler(event,self.tiddler_name);
+				event.preventDefault();
+				event.stopPropagation();
+				return true;			
+			}, false);
+
+			TWExeWidget.open_tiddler_args.addEventListener("click",function (event) {
+				self.GetLatestDetails(); //update details
+				self.OpenTiddler(event,self.tiddler_name+"_args");
+				event.preventDefault();
+				event.stopPropagation();
+				return true;			
+			}, false);
+
+			return false;
+		}
 	}
     // Insert element	
 	parent.insertBefore(button,nextSibling);
+	//renders what was in the <$twexe> tags to the button
 	this.renderChildren(button, null);
 	this.domNodes.push(button);
 };
