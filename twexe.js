@@ -155,6 +155,7 @@ TWExeWidget.prototype.GetLatestDetails = function ()
 /*
 Render this widget into the DOM
 */
+var g_twexeCount = 0;
 TWExeWidget.prototype.render = function (parent,nextSibling) {
 	// Remember parent
 	this.parentDomNode = parent;
@@ -190,7 +191,7 @@ TWExeWidget.prototype.render = function (parent,nextSibling) {
 		button.addEventListener("click", function (event) {
 			self.GetLatestDetails(); //update details
 			if(self.isImmediate){
-				self.runTiddler(event);
+				self.runTiddler(event, (g_twexeCount++).toString(10));
 			}else {
 				self.runFile(event);
 			}
@@ -301,13 +302,13 @@ TWExeWidget.prototype.runFile = function (event) {
 };
 
 //runs the tiddler contents in a temporary batch location defaults to %TEMP%twexe.bat
-TWExeWidget.prototype.runTiddler = function (event) {
+TWExeWidget.prototype.runTiddler = function (event, postfix) {
 	if (this.hasActiveX == false) { return;}
 
 	var WshShell = new ActiveXObject("WScript.Shell");
 	var fso = new ActiveXObject("Scripting.FileSystemObject");
 
-	var file = FileName = WshShell.ExpandEnvironmentStrings(this.tmpDir.replace("\n","") + "\\twexe.bat");
+	var file = FileName = WshShell.ExpandEnvironmentStrings(this.tmpDir.replace("\n","") + "\\twexe_"+postfix+".bat");
 	var f = fso.CreateTextFile(file, true);
 	f.WriteLine(this.contents);
 	f.Close();
