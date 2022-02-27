@@ -3,7 +3,7 @@
 	"name" : "twexe",
 	"description": "twexe. When in HTA Runs local exe/batch files Or those embedded in a Tiddler",
 	"author": "James W. Anderson",
-	"version": "1.1.1",
+	"version": "1.1.2",
 	"core-version": ">=5.0.0",
 	"source": "https://github.com/Welford/twexe",
 	"list": "readme",
