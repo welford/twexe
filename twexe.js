@@ -105,12 +105,48 @@ TWExeWidget.clipboard = null;
 TWExeWidget.open_tiddler = null;
 TWExeWidget.open_tiddler_args = null;
 
+var circularstack = {};
+TWExeWidget.prototype.ResolveFinalText = function (name)
+{
+	if(name in circularstack) {return;}
+	var txt = this.wiki.getTiddlerText(name);
+	if(!txt) return "";
+	circularstack[name] = true;
+	for(var c in txt) {
+		c = parseInt(c);
+		if(c+4 < txt.length && txt[c] == '{' && txt[c+1] == '{' && txt[c+2] == '|' && txt[c+3] == '|') {
+			var cc = c + 1;
+			while(cc + 2 < txt.length && txt[cc] != "}" && txt[cc+1] != "}"){cc++};
+			var replacement = this.ResolveFinalText(txt.substring(c+4,cc+1));
+			txt = txt.substring(0, c) + replacement + txt.substring(cc + 3);
+		}
+	}
+	delete circularstack[name];
+	return txt;
+}
+
+TWExeWidget.prototype.ResolveFinalTextFromText = function (txt)
+{
+	if(!txt) return "";
+	for(var c in txt) {
+		c = parseInt(c);
+		if(c+4 < txt.length && txt[c] == '{' && txt[c+1] == '{' && txt[c+2] == '|' && txt[c+3] == '|') {
+			var cc = c + 1;
+			while(cc + 2 < txt.length && txt[cc] != "}" && txt[cc+1] != "}"){cc++};
+			var replacement = this.ResolveFinalText(txt.substring(c+4,cc+1));
+			txt = txt.substring(0, c) + replacement + txt.substring(cc + 3);
+		}
+	}
+	return txt;
+}
+
 //
 TWExeWidget.prototype.GetLatestDetails = function ()
 {
 	//try to get from marco, is missing try to get from the 
 	this.tiddler_name = this.getAttribute(g_src,this.getVariable("currentTiddler"));
-	this.tiddler_args = this.getAttribute(g_args,this.wiki.getTiddlerText(this.tiddler_name+"_args"));
+	//this.tiddler_args = this.getAttribute(g_args,this.wiki.getTiddlerText(this.tiddler_name+"_args"));
+	this.tiddler_args = this.ResolveFinalTextFromText(this.getAttribute(g_args,this.wiki.getTiddlerText(this.tiddler_name+"_args")));
 	this.tmpDir = this.getAttribute(g_tmp,this.wiki.getTiddlerText("$:/plugins/welford/twexe/tmpdir"));
 
 	this.target = this.name = this.tooltip = this.cwd = null;
@@ -132,10 +168,10 @@ TWExeWidget.prototype.GetLatestDetails = function ()
 
 		if(this.target.trim().length == 0){
 			this.isImmediate = true;
-			this.contents = this.wiki.getTiddlerText(this.tiddler_name);
+			//this.contents = this.wiki.getTiddlerText(this.tiddler_name);
+			this.contents = this.ResolveFinalText(this.tiddler_name);
 		}
 	}	
-	//
 
 	if (this.target != null) {
 		var path = this.target.split("/").join("\\");
@@ -182,7 +218,8 @@ TWExeWidget.prototype.render = function (parent,nextSibling) {
 	//add the target to be called to the title
 		if (self.target) {
 			var tmp = button.getAttribute("title")
-			button.setAttribute( "title", (tmp? tmp : "") + "\
+			button.setAttribute( "title", (tmp? tmp : "") + 
+"\
 \n- - - - - - - - - - - - - - - - - - - - - - - - - - - -\
 \ncalls : " + self.target.split("\\").join("/") );
 		}
