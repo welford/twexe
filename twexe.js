@@ -12,6 +12,7 @@ twexe widget
 
 
 var g_field_prefix	= "twexe_";
+
 //try to get these from the macro, if not try to get from tiddler via "twexe_" + fieldname
 var g_target	= "target";		//batch file to run "tiddler" if it's the text in the current tiddler
 var g_name		= "name";		//name of the button displayed
@@ -53,21 +54,23 @@ var TWExeWidget = function(parseTreeNode,options) {
 	this.initialise(parseTreeNode, options);
 
 	if (TWExeWidget.prototype.context_menu == null) {
-		var context_menu = document.createElement("div");
-		var explorer = document.createElement("button");
-		var clipboard = document.createElement("button");
-		var open_tiddler = document.createElement("button");
+		var context_menu      = document.createElement("div");
+		var explorer          = document.createElement("button");
+		var clipboard         = document.createElement("button");
+		var open_tiddler      = document.createElement("button");
 		var open_tiddler_args = document.createElement("button");
 
-		explorer.innerHTML = "Open in Explorer";
-		clipboard.innerHTML = "Copy Path to clipboard";
-		open_tiddler.innerHTML = "Open Defining Tiddler";
+		explorer.innerHTML          = "Open in Explorer";
+		clipboard.innerHTML         = "Copy Path to clipboard";
+		open_tiddler.innerHTML      = "Open Defining Tiddler";
 		open_tiddler_args.innerHTML = "Open Arguments Tiddler";
 
 		explorer.style.display = clipboard.style.display = open_tiddler.style.display = open_tiddler_args.style.display 
 		= "block";
 		explorer.style.width = clipboard.style.width = open_tiddler.style.width = open_tiddler_args.style.width 
 		= "100%";
+
+		explorer.classList.add("twexe"); clipboard.classList.add("twexe"); open_tiddler.classList.add("twexe");	open_tiddler_args.classList.add("twexe");
 
 		context_menu.appendChild(explorer);
 		context_menu.appendChild(clipboard);
@@ -145,9 +148,8 @@ TWExeWidget.prototype.GetLatestDetails = function ()
 {
 	//try to get from marco, is missing try to get from the 
 	this.tiddler_name = this.getAttribute(g_src,this.getVariable("currentTiddler"));
-	//this.tiddler_args = this.getAttribute(g_args,this.wiki.getTiddlerText(this.tiddler_name+"_args"));
 	this.tiddler_args = this.ResolveFinalTextFromText(this.getAttribute(g_args,this.wiki.getTiddlerText(this.tiddler_name+"_args")));
-	this.tmpDir = this.getAttribute(g_tmp,this.wiki.getTiddlerText("$:/plugins/welford/twexe/tmpdir"));
+	this.tmpDir       = this.ResolveFinalTextFromText(this.getAttribute(g_tmp,this.wiki.getTiddlerText("$:/plugins/welford/twexe/tmpdir")));
 
 	this.target = this.name = this.tooltip = this.cwd = null;
 	this.isImmediate = false; //runs text in tiddler, rather than from file, if target is ""
@@ -158,17 +160,14 @@ TWExeWidget.prototype.GetLatestDetails = function ()
 	//get defaults for things that are not set
 	tiddler = this.wiki.getTiddler(this.tiddler_name);
 	if (tiddler) {
-		this.target = this.getAttribute(g_target, (tiddler.hasField(g_field_prefix + g_target) ? tiddler.fields[g_field_prefix + g_target] : ""));
-		//default to tiddler name
-		this.name = this.getAttribute(g_name, (tiddler.hasField(g_field_prefix + g_name) ? tiddler.fields[g_field_prefix + g_name] : this.tiddler_name));
-		//default tooltip to 
-		this.tooltip = this.getAttribute(g_tooltip, (tiddler.hasField(g_field_prefix + g_tooltip) ? tiddler.fields[g_field_prefix + g_tooltip] : " "));
-		//default cwd to current dir
-		this.cwd = this.getAttribute(g_cwd, (tiddler.hasField(g_field_prefix + g_cwd) ? tiddler.fields[g_field_prefix + g_cwd] : ".\\"));
+		//try get from macro attribute, if missing use tiddler field (both can be missing)
+		this.target   = this.ResolveFinalTextFromText(this.getAttribute(g_target,  (tiddler.hasField(g_field_prefix + g_target)  ? tiddler.fields[g_field_prefix + g_target]  : "")));
+		this.name     = this.ResolveFinalTextFromText(this.getAttribute(g_name,    (tiddler.hasField(g_field_prefix + g_name)    ? tiddler.fields[g_field_prefix + g_name]    : this.tiddler_name)));
+		this.tooltip  = this.ResolveFinalTextFromText(this.getAttribute(g_tooltip, (tiddler.hasField(g_field_prefix + g_tooltip) ? tiddler.fields[g_field_prefix + g_tooltip] : " ")));
+		this.cwd      = this.ResolveFinalTextFromText(this.getAttribute(g_cwd,     (tiddler.hasField(g_field_prefix + g_cwd)     ? tiddler.fields[g_field_prefix + g_cwd]     : ".\\")));
 
 		if(this.target.trim().length == 0){
 			this.isImmediate = true;
-			//this.contents = this.wiki.getTiddlerText(this.tiddler_name);
 			this.contents = this.ResolveFinalText(this.tiddler_name);
 		}
 	}	
@@ -307,7 +306,7 @@ TWExeWidget.prototype.render = function (parent,nextSibling) {
 			return false;
 		}
 	}
-    // Insert element	
+	// Insert element	
 	parent.insertBefore(button,nextSibling);
 	//renders what was in the <$twexe> tags to the button
 	this.renderChildren(button, null);
