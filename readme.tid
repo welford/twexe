@@ -1,78 +1,131 @@
 title: $:/plugins/welford/twexe/readme
 
-! twexe
+! TWEXE
 
-Tiddlywiki widget to run batch/exes on a local machine. Intended for an hta flavoured TW, not suitable for anything online.
+Tiddlywiki widget to run batch scripts/exes from either. 
 
-!!Usage
+* tiddlers/wiki entries directly 
+* .bat/.exe files or on your local disk.
 
-!!! Create a defining tiddler 
+This is intended for an .hta flavoured TW, not suitable for anything online.
 
-in *.tid format this is:
+!Basics
+
+Create a twexe tiddler, either :
+
+!!containing script
 
 ```
 tags: $:/tags/twexe
-title: twexe_example
-twexe_target: C:\somefolder\test.bat
-twexe_name: button_name
-twexe_cwd: "c:\temp\"
+title: twexe_direct_example
 twexe_tooltip: "click this to run test"
-twexe_args: "args to pass to the batch file / exe"
+type: text/vnd.tiddlywiki
+
+ECHO "HELLO WORLD"
+```
+
+!!linking to external batch file
+
+```
+tags: $:/tags/twexe
+title: twexe_external_example
+twexe_target: C:\somefolder\test.bat
 type: text/vnd.tiddlywiki
 
 sample test explaining the tool 
 ```
 
-The important parts are that it contains the two fields
+these can be used in the same way - it just depends on where you want to have the code you are making run.
 
-twexe_target : a path to the folder or exe you wish to open
-and
-twexe_name  : the text on the button displayed (if no supplied it will default to the tiddler title)
 
-also optionally it can be tagged with $:/tags/twexe, which adds the button automatically to the bottom of the tiddler when it is displayed normally in the story river (i.e. not called via $twexe)
+!Usage
 
-!!! Create a twexe widget referencing the above Tiddler
-
-In a different tiddler put :
-
-``<$twexe tiddler="twexe_example">``
-
-this will create a button displaying "button_name" which when clicked runs C:\somefolder\test.bat.
-
-Right clicking the button gives you the options to open the file in it's folder, to copy the path to the clipboard, and to open the defining tiddler.
-
-If twexe_target is a folder then clicking on the button will simply open the folder.
-
-!! Override tiddler values via macro
-
-``<$twexe tiddler="twexe_example" name="override twexe_name" cwd="override twexe_cwd" tooltip="override tooltip" target="override twexe_target" args="override twexe_args">``
-
-!! Run batch from macro
-
-Put the batch contents in the tiddler, leave "twexe_target" blank
-
-This will creat a temporary batch file (twexe.bat) in %TEMP% (can be changed in $:/plugins/welford/twexe/tmpdir) and fill it with the contents of the tiddler
-
-Tiddler should look like this:
+To have a button that simply runs either of the above you can use any of the below.
 
 ```
-created: 20210417195758044
-creator: ジェームス
+<$twexe tiddler="twexe_direct_example" name= "display name"/>
+<$twexe tiddler="twexe_direct_example">display name</$twexe>
+<$twexe tiddler="twexe_direct_example"/> 
+```
+
+All three will create a button with the text "display name" (the 3rd case will depend on the twexe_name field of the tiddler if supplied - if not it will default to the tiddler name)
+
+''Clicking on the button will run the script referred to.''
+
+''Right clicking on the button gives you a few  options:''
+
+* Open Defining Tiddler
+**in the example that would be be twexe_direct_example
+* Open Arguments Tiddler
+**in the example that would be be twexe_direct_example_args
+** details below
+* Open in Explorer
+** for external scripts only, opens the containg folder in Windows Explorer
+* Copy Path to clipboard
+** for external scripts only, copies the target path to the cliboard
+
+
+!Args / Fields
+
+you can configure the batch using tiddler fields or marco attributes.
+
+!!The tiddler fields available are:
+
+*twexe_target
+**if you are running an external batch file, this is the directly
+*twexe_name
+**display name of the button when transcluded in other files
+*twexe_cwd
+**current working directory when running script
+*twexe_tooltip
+**tool tip when hovering over button
+
+if passed in using a macro the ``twexe_`` prefix is removed.
+
+!!In a macro we have the additonal options
+*tiddler
+**the name of the tiddler to run (seen in the examples above)
+*args 
+**any args you wish to pass through. by default points to a tiddler with a name matching the twexe one with "_args" appended to the end. e.g. twexe_direct_example_args
+*tmpdir 
+**the location where the twexe batch files are created. defaults to the value in [[$:/plugins/welford/twexe/tmpdir]]
+
+!Transclusion works
+
+''With all fields/attributes except the "tiddler" attribute''
+
+(It works recursively too!)
+
+In the defining tiddler, the macro attributes or the tiddler fields you can use limited transclusion.
+
+e.g. suppose we have the twexe tagged tiddler
+
+```
 tags: $:/tags/twexe
-title: This Is TWEXE
-twexe_cwd: .\
-twexe_name: TWEXE Example
-twexe_target: 
-type: text/plain
+title: repeat_args
+type: text/vnd.tiddlywiki
 
-echo Hello %1
-echo Hello %1
-echo Hello %1
-echo Hello %1
-echo Hello %1
-pause
+ECHO %1 %2
 ```
 
+and a normal tidddler with the following values
+
+```
+title: Hello World Tiddler
+type: text/vnd.tiddlywiki
+field0:Hello
+field1:World
+
+Hello World
+```
+
+Then the below three 
+
+```
+<$twexe tiddler="repeat_args" args="Hello World"/>
+<$twexe tiddler="repeat_args" args="{{Hello World Tiddler}}"/>
+<$twexe tiddler="repeat_args" args="{{Hello World Tiddler!!field0}} {{Hello World Tiddler!!field1}}"/>
+```
 
 !!! You can transclude the view template too
 
@@ -80,3 +133,46 @@ pause
 {{twexe_example||$:/plugins/welford/twexe/viewtemplate}}
 {{twexe_example||$:/plugins/welford/twexe/buttontemplate}}
 ```
+
+!Tips
+
+!!~EditTextWidget lets you edit args
+
+e.g.  suppose we had these tiddlers
+
+!!!copy.files.bat
+```
+title: copy.files.bat
+type: text/vnd.tiddlywiki
+
+copy %1 %2
+pause
+```
+
+!!!~ExampleTiddler
+
+```
+title: ExampleTiddler
+type: text/vnd.tiddlywiki
+src:c:\source.txt
+dest:d:\dest.txt
+
+!! Source : <$edit-text tiddler="ExampleTiddler" field="src"/>
+!! Destination : <$edit-text tiddler="ExampleTiddler" field="dst"/>
+
+<$twexe tiddler="copy.files.bat" args="{{ExampleTiddler!!src}} {{ExampleTiddler!!dst}}" />
+```
+
+Example Tiddler contains two text boxes that let you edit the values that you pass to the copy.files.bat script.
+
+By default it would copy c:\source.txt to d:\dest.txt, but you can now edit that to be anything you want.
+
+''The fields / args you use don't need to be limited to the currently used one.''
+
+```
+<$twexe tiddler="copy.files.bat" args="{{copy.files.bat_args}}" />
+<$twexe tiddler="copy.files.bat" args="c:\foo.txt c:\bar.txt" />
+<$twexe tiddler="copy.files.bat" args="c:\foo.txt {{another tiddler containing a file name}}" />
+```
+
+all of the above are potentially correct.

@@ -10,10 +10,9 @@ twexe widget
 /*global $tw: false */
 //"use strict";
 
-
 var g_field_prefix	= "twexe_";
 
-//try to get these from the macro, if not try to get from tiddler via "twexe_" + fieldname
+//macro attribute names. Try to get these from the macro, if not try to get from tiddler via "twexe_" + name
 var g_target	= "target";		//batch file to run "tiddler" if it's the text in the current tiddler
 var g_name		= "name";		//name of the button displayed
 var g_cwd		= "cwd";		//the working directory
@@ -109,37 +108,27 @@ TWExeWidget.open_tiddler = null;
 TWExeWidget.open_tiddler_args = null;
 
 var circularstack = {};
-TWExeWidget.prototype.ResolveFinalText = function (name)
+TWExeWidget.prototype.ResolveFinalText = function (name, textReference)
 {
 	if(name in circularstack) {return;}
-	var txt = this.wiki.getTiddlerText(name);
+	var txt = textReference ? this.wiki.getTextReference(name) : name;
 	if(!txt) return "";
 	circularstack[name] = true;
 	for(var c in txt) {
-		c = parseInt(c);
-		if(c+4 < txt.length && txt[c] == '{' && txt[c+1] == '{' && txt[c+2] == '|' && txt[c+3] == '|') {
-			var cc = c + 1;
-			while(cc + 2 < txt.length && txt[cc] != "}" && txt[cc+1] != "}"){cc++};
-			var replacement = this.ResolveFinalText(txt.substring(c+4,cc+1));
-			txt = txt.substring(0, c) + replacement + txt.substring(cc + 3);
+		var transclude_start = parseInt(c);
+		//we have a transclusion
+		if(transclude_start+4 < txt.length && txt[transclude_start] == '{' && txt[transclude_start+1] == '{') {
+			var start_offset = 2;
+			if(txt[transclude_start+2] == '|' && txt[transclude_start+3] == '|'){
+				start_offset = 4
+			};
+			var transclude_end = transclude_start + 1;
+			while(transclude_end + 2 < txt.length && txt[transclude_end] != "}" && txt[transclude_end+1] != "}"){transclude_end++};
+			var replacement = this.ResolveFinalText(txt.substring(transclude_start+start_offset,transclude_end+1),true);
+			txt = txt.substring(0, transclude_start) + replacement + txt.substring(transclude_end + 3);
 		}
 	}
 	delete circularstack[name];
-	return txt;
-}
-
-TWExeWidget.prototype.ResolveFinalTextFromText = function (txt)
-{
-	if(!txt) return "";
-	for(var c in txt) {
-		c = parseInt(c);
-		if(c+4 < txt.length && txt[c] == '{' && txt[c+1] == '{' && txt[c+2] == '|' && txt[c+3] == '|') {
-			var cc = c + 1;
-			while(cc + 2 < txt.length && txt[cc] != "}" && txt[cc+1] != "}"){cc++};
-			var replacement = this.ResolveFinalText(txt.substring(c+4,cc+1));
-			txt = txt.substring(0, c) + replacement + txt.substring(cc + 3);
-		}
-	}
 	return txt;
 }
 
@@ -148,8 +137,8 @@ TWExeWidget.prototype.GetLatestDetails = function ()
 {
 	//try to get from marco, is missing try to get from the 
 	this.tiddler_name = this.getAttribute(g_src,this.getVariable("currentTiddler"));
-	this.tiddler_args = this.ResolveFinalTextFromText(this.getAttribute(g_args,this.wiki.getTiddlerText(this.tiddler_name+"_args")));
-	this.tmpDir       = this.ResolveFinalTextFromText(this.getAttribute(g_tmp,this.wiki.getTiddlerText("$:/plugins/welford/twexe/tmpdir")));
+	this.tiddler_args = this.ResolveFinalText(this.getAttribute(g_args,this.wiki.getTiddlerText(this.tiddler_name+"_args")));
+	this.tmpDir       = this.ResolveFinalText(this.getAttribute(g_tmp,this.wiki.getTiddlerText("$:/plugins/welford/twexe/tmpdir")));
 
 	this.target = this.name = this.tooltip = this.cwd = null;
 	this.isImmediate = false; //runs text in tiddler, rather than from file, if target is ""
@@ -161,14 +150,14 @@ TWExeWidget.prototype.GetLatestDetails = function ()
 	tiddler = this.wiki.getTiddler(this.tiddler_name);
 	if (tiddler) {
 		//try get from macro attribute, if missing use tiddler field (both can be missing)
-		this.target   = this.ResolveFinalTextFromText(this.getAttribute(g_target,  (tiddler.hasField(g_field_prefix + g_target)  ? tiddler.fields[g_field_prefix + g_target]  : "")));
-		this.name     = this.ResolveFinalTextFromText(this.getAttribute(g_name,    (tiddler.hasField(g_field_prefix + g_name)    ? tiddler.fields[g_field_prefix + g_name]    : this.tiddler_name)));
-		this.tooltip  = this.ResolveFinalTextFromText(this.getAttribute(g_tooltip, (tiddler.hasField(g_field_prefix + g_tooltip) ? tiddler.fields[g_field_prefix + g_tooltip] : " ")));
-		this.cwd      = this.ResolveFinalTextFromText(this.getAttribute(g_cwd,     (tiddler.hasField(g_field_prefix + g_cwd)     ? tiddler.fields[g_field_prefix + g_cwd]     : ".\\")));
+		this.target   = this.ResolveFinalText(this.getAttribute(g_target,  (tiddler.hasField(g_field_prefix + g_target)  ? tiddler.fields[g_field_prefix + g_target]  : "")));
+		this.name     = this.ResolveFinalText(this.getAttribute(g_name,    (tiddler.hasField(g_field_prefix + g_name)    ? tiddler.fields[g_field_prefix + g_name]    : this.tiddler_name)));
+		this.tooltip  = this.ResolveFinalText(this.getAttribute(g_tooltip, (tiddler.hasField(g_field_prefix + g_tooltip) ? tiddler.fields[g_field_prefix + g_tooltip] : " ")));
+		this.cwd      = this.ResolveFinalText(this.getAttribute(g_cwd,     (tiddler.hasField(g_field_prefix + g_cwd)     ? tiddler.fields[g_field_prefix + g_cwd]     : ".\\")));
 
 		if(this.target.trim().length == 0){
 			this.isImmediate = true;
-			this.contents = this.ResolveFinalText(this.tiddler_name);
+			this.contents = this.ResolveFinalText(this.tiddler_name,true);
 		}
 	}	
 
@@ -204,7 +193,8 @@ TWExeWidget.prototype.render = function (parent,nextSibling) {
 	var button = this.document.createElement("button");
 	// Assign classes
 	var classes = this["class"].split(" ") || [];	
-	button.className = classes.join(" ");
+	button.className = classes ? classes.join(" ") : "";
+	button.classList.add("twexe");
 	// Assign styles
 	if(this.style) {
 		button.setAttribute("style", this.style);
