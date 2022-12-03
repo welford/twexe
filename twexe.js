@@ -12,15 +12,18 @@ twexe widget
 
 var g_field_prefix	= "twexe_";
 
+//order of args precedence
+//[macro attribute > tiddler field > code default]
+
 //macro attribute names. Try to get these from the macro, if not try to get from tiddler via "twexe_" + name
 var g_target	= "target";		//batch file to run "tiddler" if it's the text in the current tiddler
 var g_name		= "name";		//name of the button displayed
 var g_cwd		= "cwd";		//the working directory
 var g_tooltip	= "tooltip";	//tooltip when hovering
+var g_args		= "args";		//the args to pass to the batch file, if missing use tiddler field "twexe_args"
 
 //other data we try to grab
 var g_src		= "tiddler";	//the tiddler that backs this data, if this is missing use "currentTiddler"
-var g_args		= "args";		//the args to pass to the batch file, if this is missing defaults to tiddler name  + "_args"
 var g_tmp		= "tmpdir";		//if we are running an immediate tiddler the batch gets created here, if not in macro defaults to value in "$:/plugins/welford/twexe/tmpdir"
 
 function mouseX(evt) {
@@ -53,28 +56,25 @@ var TWExeWidget = function(parseTreeNode,options) {
 	this.initialise(parseTreeNode, options);
 
 	if (TWExeWidget.prototype.context_menu == null) {
-		var context_menu      = document.createElement("div");
-		var explorer          = document.createElement("button");
-		var clipboard         = document.createElement("button");
-		var open_tiddler      = document.createElement("button");
-		var open_tiddler_args = document.createElement("button");
+		var context_menu            = document.createElement("div");
+		var explorer                = document.createElement("button");
+		var clipboard               = document.createElement("button");
+		var open_tiddler            = document.createElement("button");
 
 		explorer.innerHTML          = "Open in Explorer";
 		clipboard.innerHTML         = "Copy Path to clipboard";
 		open_tiddler.innerHTML      = "Open Defining Tiddler";
-		open_tiddler_args.innerHTML = "Open Arguments Tiddler";
 
-		explorer.style.display = clipboard.style.display = open_tiddler.style.display = open_tiddler_args.style.display 
+		explorer.style.display = clipboard.style.display = open_tiddler.style.display
 		= "block";
-		explorer.style.width = clipboard.style.width = open_tiddler.style.width = open_tiddler_args.style.width 
+		explorer.style.width = clipboard.style.width = open_tiddler.style.width
 		= "100%";
 
-		explorer.classList.add("twexe"); clipboard.classList.add("twexe"); open_tiddler.classList.add("twexe");	open_tiddler_args.classList.add("twexe");
+		explorer.classList.add("twexe"); clipboard.classList.add("twexe"); open_tiddler.classList.add("twexe");
 
 		context_menu.appendChild(explorer);
 		context_menu.appendChild(clipboard);
 		context_menu.appendChild(open_tiddler);
-		context_menu.appendChild(open_tiddler_args);
 
 		context_menu.style.display = "None";
 		context_menu.style.zIndex = "1000";
@@ -84,13 +84,12 @@ var TWExeWidget = function(parseTreeNode,options) {
 		TWExeWidget.explorer = explorer;
 		TWExeWidget.clipboard = clipboard;
 		TWExeWidget.open_tiddler = open_tiddler;
-		TWExeWidget.open_tiddler_args = open_tiddler_args;
 
 		document.body.appendChild(TWExeWidget.context_menu)
 
 		//close the context menu on any other click
 		document.onmousedown = function (event) {
-			if (event.target == TWExeWidget.clipboard || event.target == TWExeWidget.explorer || event.target == TWExeWidget.open_tiddler || event.target == TWExeWidget.open_tiddler_args) {
+			if (event.target == TWExeWidget.clipboard || event.target == TWExeWidget.explorer || event.target == TWExeWidget.open_tiddler) {
 				event.target.click();
 			}
 			TWExeWidget.context_menu.style.display = "None";
@@ -105,15 +104,14 @@ TWExeWidget.context_menu = null;
 TWExeWidget.explorer = null;
 TWExeWidget.clipboard = null;
 TWExeWidget.open_tiddler = null;
-TWExeWidget.open_tiddler_args = null;
 
 var circularstack = {};
-TWExeWidget.prototype.ResolveFinalText = function (name, textReference)
+TWExeWidget.prototype.ResolveFinalText = function (value, textReference)
 {
-	if(name in circularstack) {return;}
-	var txt = textReference ? this.wiki.getTextReference(name) : name;
+	if(value in circularstack) {return;}
+	var txt = textReference ? this.wiki.getTextReference(value,"",this.tiddler_name) : value;
 	if(!txt) return "";
-	circularstack[name] = true;
+	circularstack[value] = true;
 	for(var c in txt) {
 		var transclude_start = parseInt(c);
 		//we have a transclusion
@@ -128,7 +126,7 @@ TWExeWidget.prototype.ResolveFinalText = function (name, textReference)
 			txt = txt.substring(0, transclude_start) + replacement + txt.substring(transclude_end + 3);
 		}
 	}
-	delete circularstack[name];
+	delete circularstack[value];
 	return txt;
 }
 
@@ -137,10 +135,9 @@ TWExeWidget.prototype.GetLatestDetails = function ()
 {
 	//try to get from marco, is missing try to get from the 
 	this.tiddler_name = this.getAttribute(g_src,this.getVariable("currentTiddler"));
-	this.tiddler_args = this.ResolveFinalText(this.getAttribute(g_args,this.wiki.getTiddlerText(this.tiddler_name+"_args")));
 	this.tmpDir       = this.ResolveFinalText(this.getAttribute(g_tmp,this.wiki.getTiddlerText("$:/plugins/welford/twexe/tmpdir")));
 
-	this.target = this.name = this.tooltip = this.cwd = null;
+	this.target = this.name = this.tooltip = this.cwd = this.args = null;
 	this.isImmediate = false; //runs text in tiddler, rather than from file, if target is ""
 	this.hasActiveX = true;
 	this.isFolder = false;
@@ -154,6 +151,7 @@ TWExeWidget.prototype.GetLatestDetails = function ()
 		this.name     = this.ResolveFinalText(this.getAttribute(g_name,    (tiddler.hasField(g_field_prefix + g_name)    ? tiddler.fields[g_field_prefix + g_name]    : this.tiddler_name)));
 		this.tooltip  = this.ResolveFinalText(this.getAttribute(g_tooltip, (tiddler.hasField(g_field_prefix + g_tooltip) ? tiddler.fields[g_field_prefix + g_tooltip] : " ")));
 		this.cwd      = this.ResolveFinalText(this.getAttribute(g_cwd,     (tiddler.hasField(g_field_prefix + g_cwd)     ? tiddler.fields[g_field_prefix + g_cwd]     : ".\\")));
+		this.args     = this.ResolveFinalText(this.getAttribute(g_args,    (tiddler.hasField(g_field_prefix + g_args)    ? tiddler.fields[g_field_prefix + g_args]    : "")));
 
 		if(this.target.trim().length == 0){
 			this.isImmediate = true;
@@ -249,10 +247,10 @@ TWExeWidget.prototype.render = function (parent,nextSibling) {
 			TWExeWidget.open_tiddler = new_element;
 			//if this isn't based on a source tiddler don't display it
 			if (self.tiddler_name) {
-				TWExeWidget.open_tiddler.style.display = TWExeWidget.open_tiddler_args.style.display = "block";
+				TWExeWidget.open_tiddler.style.display = "block";
 			}
 			else {
-				TWExeWidget.open_tiddler.style.display = TWExeWidget.open_tiddler_args.style.display = "None";
+				TWExeWidget.open_tiddler.style.display = "None";
 			}
 			//if there is no target don't attempt to open it in explorer
 			if(self.target.trim().length == 0){
@@ -285,14 +283,6 @@ TWExeWidget.prototype.render = function (parent,nextSibling) {
 				return true;			
 			}, false);
 
-			TWExeWidget.open_tiddler_args.addEventListener("click",function (event) {
-				self.GetLatestDetails(); //update details
-				self.OpenTiddler(event,self.tiddler_name+"_args");
-				event.preventDefault();
-				event.stopPropagation();
-				return true;			
-			}, false);
-
 			return false;
 		}
 	}
@@ -311,7 +301,7 @@ TWExeWidget.prototype.runFile = function (event) {
 			this.openFile(event);
 		}
 		else {
-			var args = this.tiddler_args;
+			var args = this.args;
 			if (!args){ args = "";}
 			var WshShell = new ActiveXObject("WScript.Shell");
 			WshShell.CurrentDirectory = WshShell.ExpandEnvironmentStrings(this.cwd);
@@ -339,7 +329,7 @@ TWExeWidget.prototype.runTiddler = function (event, postfix) {
 	f.WriteLine(this.contents);
 	f.Close();
 
-	var args = this.tiddler_args;
+	var args = this.args;
 	if (!args){ args = "";}
 
 	WshShell.CurrentDirectory = WshShell.ExpandEnvironmentStrings(this.cwd);

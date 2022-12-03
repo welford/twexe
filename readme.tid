@@ -67,7 +67,11 @@ All three will create a button with the text "display name" (the 3rd case will d
 
 !Args / Fields
 
-you can configure the batch using tiddler fields or marco attributes.
+You can configure the batch using tiddler fields or marco attributes.
+
+
+The order of precedence with args is [macro attribute > tiddler field > code default]
+
 
 !!The tiddler fields available are:
 
