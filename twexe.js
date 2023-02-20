@@ -124,6 +124,7 @@ TWExeWidget.prototype.ResolveFinalText = function (value, textReference)
 			while(transclude_end + 2 < txt.length && txt[transclude_end] != "}" && txt[transclude_end+1] != "}"){transclude_end++};
 			var replacement = this.ResolveFinalText(txt.substring(transclude_start+start_offset,transclude_end+1),true);
 			txt = txt.substring(0, transclude_start) + replacement + txt.substring(transclude_end + 3);
+			c = 0;//potential recursion
 		}
 	}
 	delete circularstack[value];
