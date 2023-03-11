@@ -112,8 +112,9 @@ TWExeWidget.prototype.ResolveFinalText = function (value, textReference)
 	var txt = textReference ? this.wiki.getTextReference(value,"",this.tiddler_name) : value;
 	if(!txt) return "";
 	circularstack[value] = true;
-	for(var c in txt) {
-		var transclude_start = parseInt(c);
+	var c=0;
+	while(c<txt.length) {
+		var transclude_start = c;
 		//we have a transclusion
 		if(transclude_start+4 < txt.length && txt[transclude_start] == '{' && txt[transclude_start+1] == '{') {
 			var start_offset = 2;
@@ -124,8 +125,8 @@ TWExeWidget.prototype.ResolveFinalText = function (value, textReference)
 			while(transclude_end + 2 < txt.length && txt[transclude_end] != "}" && txt[transclude_end+1] != "}"){transclude_end++};
 			var replacement = this.ResolveFinalText(txt.substring(transclude_start+start_offset,transclude_end+1),true);
 			txt = txt.substring(0, transclude_start) + replacement + txt.substring(transclude_end + 3);
-			c = 0;//potential recursion
 		}
+		c++;
 	}
 	delete circularstack[value];
 	return txt;
