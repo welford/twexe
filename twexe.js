@@ -363,10 +363,13 @@ TWExeWidget.prototype.runTiddler = function (event, postfix) {
 	var WshShell = new ActiveXObject("WScript.Shell");
 	var fso = new ActiveXObject("Scripting.FileSystemObject");
 
-	if(this.deployDir) {
-		file = WshShell.ExpandEnvironmentStrings(this.deployDir.replace("\n","") + "\\"+this.tiddler_name);
-	} else {
-		file = WshShell.ExpandEnvironmentStrings(this.tmpDir.replace("\n","") + "\\twexe_"+postfix+".bat");
+	var folder = this.deployDir ? this.deployDir : this.tmpDir;
+	var file = this.deployDir ? this.tiddler_name : "twexe_"+postfix+".bat";
+	folder = WshShell.ExpandEnvironmentStrings(folder.replace("\n",""));
+	file = WshShell.ExpandEnvironmentStrings(folder+"\\"+file);
+
+	if(fso.FolderExists(folder) == false ) {
+		fso.CreateFolder(folder)
 	}
 
 	var f = fso.CreateTextFile(file, true);
@@ -386,7 +389,12 @@ TWExeWidget.prototype.deployTiddler = function (event) {
 
 	var WshShell = new ActiveXObject("WScript.Shell");
 	var fso = new ActiveXObject("Scripting.FileSystemObject");
-	var file = WshShell.ExpandEnvironmentStrings(this.deployDir.replace("\n","") + "\\"+this.tiddler_name);
+	var folder = WshShell.ExpandEnvironmentStrings(this.deployDir.replace("\n",""));
+	var file = WshShell.ExpandEnvironmentStrings(folder + "\\" + this.tiddler_name);
+
+	if(fso.FolderExists(folder) == false ) {
+		fso.CreateFolder(folder)
+	}
 
 	var f = fso.CreateTextFile(file, true);
 	f.WriteLine(this.contents);
